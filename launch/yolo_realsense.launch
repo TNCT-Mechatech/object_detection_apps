@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<launch>
+    <!--<args for od_depth>-->
+    <arg name="input_depth"             default="/camera/depth/image_rect_raw"      />
+    <arg name="input_od"                default="/yolo_publisher/color/yolo_detections" />
+    <arg name="margin_x"                default="1.0"   /><!--if 1.0, x size of bounding box will be twice-->
+    <arg name="margin_y"                default="1.0"   /><!--if 1.0, y size of bounding box will be twice-->
+
+    <!--launch Realsense-->
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <!--depth resolution-->
+        <!--<arg name="align_depth"         value="true"/>--> <!--without this, resolution won't change-->
+        <!--<arg name="depth_width"         value="1280"/>-->
+        <!--<arg name="depth_height"        value="720"/>-->
+        <!--depth fps-->
+        <arg name="depth_fps"           value="30"/>
+        <!--disable color image because it is unnecessary in yolo_realsnse node-->
+        <arg name="enable_color"        value="false"/>
+    </include>
+
+    <!--launch OAK camera and YOLOv4-tiny-->
+    <include file="$(find depthai_apps)/launch/yolo_publisher.launch">
+        <!--number of classes-->
+        <arg name="num_classes"        value="2"/>
+        <!--path of blob file-->
+        <arg name="nn_path"            value="$(find depthai_apps)/resources/yolov4_tiny_ball_house.blob"/>
+    </include>
+
+    <!--<change topic names so that od_depth can subscribe> -->
+    <remap from="/depth_image"         to="$(arg input_depth)"  />
+    <remap from="/object_detections"   to="$(arg input_od)" />
+
+    <node name="od_depth" pkg="object_detection_apps" type="od_depth" output="screen" required="true">
+        <param name="margin_x"         value="$(arg margin_x)"/>
+        <param name="margin_y"         value="$(arg margin_y)"/>
+    </node>
+
+</launch>

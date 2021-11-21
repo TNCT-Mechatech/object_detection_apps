@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find depthai_apps)/launch/yolo_publisher.launch">
+        <!--number of classes-->
+        <arg name="num_classes"        value="2"/>
+        <!--path of blob file-->
+        <arg name="nn_path" value="$(find depthai_apps)/resources/yolov4_tiny_ball_house.blob"/>
+    </include>
+
+    <node name="od_visualizer" pkg="object_detecion_apps" type="od_visualizer" output="screen" required="true"/>
+
+</launch>
