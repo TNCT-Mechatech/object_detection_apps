@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <launch>
+    <!--<args for od_visualizer>-->
+    <arg name="input_rgb"               default="/yolo_publisher/color/image"             />
+    <arg name="input_od"                default="/yolo_publisher/color/yolo_detections" />
 
     <include file="$(find depthai_apps)/launch/yolo_publisher.launch">
         <!--number of classes-->
@@ -7,6 +10,10 @@
         <!--path of blob file-->
         <arg name="nn_path" value="$(find depthai_apps)/resources/yolov4_tiny_ball_house.blob"/>
     </include>
+
+    <!--<change topic names so that od_visualizer can subscribe> -->
+    <remap from="/rgb_image"           to="$(arg input_rgb)"  />
+    <remap from="/object_detections"   to="$(arg input_od)" />
 
     <node name="od_visualizer" pkg="object_detecion_apps" type="od_visualizer" output="screen" required="true"/>
 

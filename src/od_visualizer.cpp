@@ -202,8 +202,8 @@ int main(int argc, char** argv){
     ros::init(argc, argv, "od_visualizer_node");
     ros::NodeHandle pnh("~");
 
-    ros::Subscriber imageSub = pnh.subscribe("/yolo_publisher/color/image", 10, imageCallback);
-    ros::Subscriber detectionSub = pnh.subscribe("/yolo_publisher/color/yolo_detections", 10, detectionCallback);
+    ros::Subscriber imageSub = pnh.subscribe("/rgb_image", 10, imageCallback);
+    ros::Subscriber detectionSub = pnh.subscribe("/object_detections", 10, detectionCallback);
 
     //  publisher
     image_transport::ImageTransport it(pnh);
