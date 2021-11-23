@@ -11,7 +11,7 @@
 #include <vision_msgs/Detection2D.h>
 
 //  for publishing image data (for debug)
-//#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.h>
 
 #include <std_msgs/UInt16MultiArray.h>
 
@@ -20,7 +20,7 @@ static const std::vector<std::string> labelMap = {
     "ball", "house"};
 
 //  iamge topic publisher
-//image_transport::Publisher image_pub;
+image_transport::Publisher image_pub;
 
 //  depth topic publisher
 ros::Publisher depth_pub;
@@ -47,10 +47,11 @@ std::vector<DetectionData> datas;
 
 //  initialize margin
 /** Note that the unit of margin is a ratio.
- *  eg) if margin_x is 1, x size of the box will be twice.
+ *  eg) if coef_x is 1, x size of the box will be twice.
  */
-double margin_x = 0.0;
-double margin_y = 0.0;
+double coef_x = 0.0;
+double coef_y = 0.0;
+int threshold = 0;
 
 /**
  * Draw frame
@@ -92,7 +93,7 @@ void getDepth(cv::Mat img, std::vector<DetectionData> _datas)
     int index = 0;
 
     //  define output image
-    //cv::Mat output_img = cv::Mat::zeros(resized_img.size(), resized_img.type());
+    cv::Mat output_img = cv::Mat::zeros(resized_img.size(), resized_img.type());
 
     //  for each
     for (DetectionData _data : _datas) {
@@ -109,17 +110,21 @@ void getDepth(cv::Mat img, std::vector<DetectionData> _datas)
             //  center positon
             cv::Point centerPoint = cv::Point(_data.center_x, _data.center_y);
 
+            double dx = size_x / 2;
+            double dy = size_y / 2;
+
             //  box position
-            double position_x_min = centerPoint.x - (size_x / 2);
-            double position_x_max = centerPoint.x + (size_x / 2);
-            double position_y_min = centerPoint.y - (size_y / 2);
-            double position_y_max = centerPoint.y + (size_y / 2);
+            double position_x_min = centerPoint.x - dx;
+            double position_x_max = centerPoint.x + dx;
+            double position_y_min = centerPoint.y - dy;
+            double position_y_max = centerPoint.y + dy;
+
 
             //  draw filled rectangle on the mask image with 
             cv::rectangle(
                 mask,
-                cv::Point(position_x_min - margin_x*(size_x/2), position_y_min - margin_y*(size_y/2)),
-                cv::Point(position_x_max + margin_x*(size_x/2), position_y_max + margin_y*(size_y/2)),
+                cv::Point(position_x_min - dx*(coef_x - 1), position_y_min - dy*(coef_y - 1)),
+                cv::Point(position_x_min + dx*(coef_x - 1), position_y_min + dy*(coef_y - 1)),
                 1,
                 -1
             );
@@ -137,15 +142,16 @@ void getDepth(cv::Mat img, std::vector<DetectionData> _datas)
             //  for each non-zero point
             for (cv::Point nonZeroPoint : nonZeroLocs) {
                 uint16_t depth = resized_img.at<uint16_t>(nonZeroPoint);
-                if (depth_min > depth) depth_min  = depth;
+                if (depth > threshold && depth_min > depth) depth_min  = depth;
             }
+
 
             depths_msg.data[index] = depth_min;
 
             //ROS_INFO("Approximate distance[mm]: %d", depth_min);
 
             // Clone masked image as an output image
-            //output_img = object_img.clone();
+            output_img = object_img.clone();
 
             index++;
         }
@@ -154,10 +160,10 @@ void getDepth(cv::Mat img, std::vector<DetectionData> _datas)
     //  publish depth topic
     depth_pub.publish(depths_msg);
 
-    //  convert
-    //sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "16UC1", output_img).toImageMsg();
+    //  convert image to topic message
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "16UC1", output_img).toImageMsg();
     //  publish image topic
-    //image_pub.publish(msg);
+    image_pub.publish(msg);
 }
 
 void depthCallback(const sensor_msgs::Image& msg)
@@ -196,14 +202,19 @@ int main(int argc, char** argv){
     ros::NodeHandle pnh("~");
 
     // Uses the margin values from param if passed or else no margins
-    if (pnh.hasParam("margin_x"))
+    if (pnh.hasParam("coef_x"))
     {
-      pnh.getParam("margin_x", margin_x);
+      pnh.getParam("coef_x", coef_x);
     }
-    if (pnh.hasParam("margin_y"))
+    if (pnh.hasParam("coef_y"))
     {
-      pnh.getParam("margin_y", margin_y);
+      pnh.getParam("coef_y", coef_y);
     }
+    if (pnh.hasParam("threshold"))
+    {
+      pnh.getParam("threshold", threshold);
+    }
+
 
     //  subscribers
     ros::Subscriber depthSub = pnh.subscribe("/depth_image", 10, depthCallback);
@@ -211,9 +222,9 @@ int main(int argc, char** argv){
 
     //  publishers
     //  for processed depth image
-    //image_transport::ImageTransport it(pnh);
-    //image_pub = it.advertise("/od_depth/resized_depth/", 10);
-    //  for depth data
+    image_transport::ImageTransport it(pnh);
+    image_pub = it.advertise("/od_depth/resized_depth/", 10);
+    //  for depth datamargin_x
     depth_pub = pnh.advertise<std_msgs::UInt16MultiArray>("/od_depth/object_depths", 10);
 
     ros::spin();
