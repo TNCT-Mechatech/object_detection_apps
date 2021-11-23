@@ -15,6 +15,6 @@
     <remap from="/rgb_image"           to="$(arg input_rgb)"  />
     <remap from="/object_detections"   to="$(arg input_od)" />
 
-    <node name="od_visualizer" pkg="object_detecion_apps" type="od_visualizer" output="screen" required="true"/>
+    <node name="od_visualizer" pkg="object_detection_apps" type="od_visualizer" output="screen" required="true"/>
 
 </launch>
