@@ -30,7 +30,6 @@
 
   <depend>cv_bridge</depend>
 
-
   <export>
   </export>
 </package>
