@@ -3,6 +3,7 @@
 //  darknet_ros_msgs
 #include <darknet_ros_msgs/BoundingBox.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
+#include <darknet_ros_msgs/ObjectCount.h>
 
 //  messege of publisher
 #include <vision_msgs/Detection2DArray.h>
@@ -57,12 +58,28 @@ void detectionCallback(const darknet_ros_msgs::BoundingBoxes& msg) {
     detection2D_pub.publish(pubMsg);
 }
 
+
+/**
+ * This callback function push empty Detection2DArray when darknet detect no object.
+ */
+void isDetectedCallback(const darknet_ros_msgs::ObjectCount& msg){
+    //  push emtpy msg when count is/under 0
+    if (msg.count <= 0) {
+        vision_msgs::Detection2DArray pubMsg;
+        
+        //  push message
+        detection2D_pub.publish(pubMsg);
+    }
+}
+
+
 int main(int argc, char** argv) {
     ros::init(argc, argv, "darknet_ros_message_converter");
     ros::NodeHandle nh("~");
 
     //  subscriber
     ros::Subscriber detectionSub = nh.subscribe("/darknet_ros/bounding_boxes", 10, detectionCallback);
+    ros::Subscriber detectionCountSub = nh.subscribe("/darknet_ros/found_object", 10, isDetectedCallback);
     //  publisher
     detection2D_pub = nh.advertise<vision_msgs::Detection2DArray>("/darknet_ros/converted_message", 1000);
 
