@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   vision_msgs
   cv_bridge
+  # for using darknet message
+  darknet_ros_msgs
 )
 
 
