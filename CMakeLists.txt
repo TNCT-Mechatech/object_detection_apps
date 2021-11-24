@@ -13,8 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   vision_msgs
   cv_bridge
-  # for using darknet message
+  # for darknet message converter
   darknet_ros_msgs
+  geometry_msgs
 )
 
 
@@ -48,6 +49,12 @@ target_link_libraries(od_visualizer
 
 add_executable(od_depth src/od_depth.cpp)
 target_link_libraries(od_depth
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+
+add_executable(darknet_msg_converter src/darknet_msg_converter.cpp)
+target_link_libraries(darknet_msg_converter
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
